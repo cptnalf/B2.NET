@@ -94,6 +94,34 @@ namespace B2Net {
 			return await ResponseParser.ParseResponse<B2File>(response);
 		}
 
+    /// <summary>
+    /// get an upload url for use with one Thread.
+    /// </summary>
+    /// <param name="bucketId"></param>
+    /// <param name="cancelToken"></param>
+    /// <returns></returns>
+    public async Task<B2UploadUrl> GetUploadUrl(string bucketId = "", CancellationToken cancelToken = default(CancellationToken)) {
+      var opBucketId = Utilities.DetermineBucketId(_options, bucketId);
+
+      // sent the request.
+      var uploadUrlReq = FileUploadRequestGenerators.GetUploadUrl(_options, opBucketId);
+      var uploadUrlResp = await _client.SendAsync(uploadUrlReq, cancelToken);
+
+      // parse response and return it.
+      return await ResponseParser.ParseResponse<B2UploadUrl>(uploadUrlResp);
+    }
+
+    public async Task<B2File> Upload(byte[] fileData, string fileName, B2UploadUrl url, string bucketId = "", Dictionary<string,string> fileInfo = null, CancellationToken cancelToken = default(CancellationToken)) {
+      var opBucketId = Utilities.DetermineBucketId(_options, bucketId);
+
+      // generate the upload request.
+      var requestMessage = FileUploadRequestGenerators.Upload(_options, url.UploadUrl, fileData, fileName, fileInfo);
+      var response = await _client.SendAsync(requestMessage, cancelToken);
+
+      // send response back.
+      return await ResponseParser.ParseResponse<B2File>(response);
+    }
+
 		/// <summary>
 		/// Downloads one file by providing the name of the bucket and the name of the file.
 		/// </summary>
@@ -198,12 +226,6 @@ namespace B2Net {
       file.FileData = await response.Content.ReadAsByteArrayAsync();
 
 			return await Task.FromResult(file);
-		}
-
-		internal class B2UploadUrl {
-			public string BucketId { get; set; }
-			public string UploadUrl { get; set; }
-			public string AuthorizationToken { get; set; }
 		}
 	}
 }
