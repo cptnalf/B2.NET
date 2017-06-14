@@ -30,6 +30,8 @@
 				ApiUrl = response.apiUrl;
 				DownloadUrl = response.downloadUrl;
 				AuthorizationToken = response.authorizationToken;
+				recommendedPartSize = response.recommendedPartSize;
+				absoluteMinimumPartSize = response.absoluteMinimumPartSize;
 			}
 		}
 	}
