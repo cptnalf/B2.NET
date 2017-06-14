@@ -9,6 +9,8 @@
 		/// only ever use one bucket. Default: false.
 		/// </summary>
 		public bool PersistBucket { get; set; }
+		public long recommendedPartSize { get; set; }
+		public long absoluteMinimumPartSize { get; set; }
 		
 		// State
 		public string ApiUrl { get; set; }

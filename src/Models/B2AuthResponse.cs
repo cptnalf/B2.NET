@@ -4,5 +4,7 @@
 		public string apiUrl { get; set; }
 		public string authorizationToken { get; set; }
 		public string downloadUrl { get; set; }
+		public long recommendedPartSize { get; set; }
+		public long absoluteMinimumPartSize { get; set; }
 	}
 }
