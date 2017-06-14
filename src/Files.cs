@@ -192,6 +192,8 @@ namespace B2Net {
                 }
             }
             file.FileInfo = infoData;
+						if (response.Content.Headers.ContentLength.HasValue)
+							{ file.Size = response.Content.Headers.ContentLength.Value; }
             file.FileData = await response.Content.ReadAsByteArrayAsync();
 
 			return await Task.FromResult(file);
