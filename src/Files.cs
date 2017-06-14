@@ -183,18 +183,19 @@ namespace B2Net {
 				file.FileId = values.First();
 			}
             // TODO: File Info headers
-            var fileInfoHeaders = response.Headers.Where(h => h.Key.ToLower().Contains("x-bz-info"));
-            var infoData = new Dictionary<string, string>();
-            if (fileInfoHeaders.Count() > 0) {
-                foreach (var fileInfo in fileInfoHeaders)
-                {
-                    infoData.Add(fileInfo.Key, fileInfo.Value.First());
-                }
-            }
-            file.FileInfo = infoData;
-						if (response.Content.Headers.ContentLength.HasValue)
-							{ file.Size = response.Content.Headers.ContentLength.Value; }
-            file.FileData = await response.Content.ReadAsByteArrayAsync();
+			var fileInfoHeaders = response.Headers.Where(h => h.Key.StartsWith("X-Bz-Info-", StringComparison.OrdinalIgnoreCase));
+      var infoData = new Dictionary<string, string>();
+      if (fileInfoHeaders.Count() > 0) {
+        foreach (var fileInfo in fileInfoHeaders)
+          {
+						// SubString(10) skips the "X-Bz-Info-" prefix
+            infoData.Add(fileInfo.Key.SubString(10), fileInfo.Value.First());
+          }
+        }
+      file.FileInfo = infoData;
+			if (response.Content.Headers.ContentLength.HasValue)
+				{ file.Size = response.Content.Headers.ContentLength.Value; }
+      file.FileData = await response.Content.ReadAsByteArrayAsync();
 
 			return await Task.FromResult(file);
 		}
