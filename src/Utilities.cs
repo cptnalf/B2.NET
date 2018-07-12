@@ -33,7 +33,7 @@ namespace B2Net {
 					throw new Exception("Seralization of the response failed. See inner exception for response contents and serialization error.", ex);
 				}
 				if (b2Error != null) {
-					throw new B2Exception(b2Error.Code, b2Error.Status, b2Error.Message, retry);
+					throw new Models.B2Exception(b2Error.Code, b2Error.Status, b2Error.Message, retry);
 				}
 			}
 		}
