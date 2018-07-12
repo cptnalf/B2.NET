@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using B2Net.Http;
 using B2Net.Models;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -11,16 +12,23 @@ namespace B2Net.Tests {
 		private B2Bucket TestBucket = new B2Bucket();
 		private B2Client Client = null;
 		private List<B2File> FilesToDelete = new List<B2File>();
+	    private string BucketName = "";
+
+#if NETFULL
+	    private string FilePath => Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory, "../../../");
+#else
+        private string FilePath => Path.Combine(System.AppContext.BaseDirectory, "../../../");
+#endif
 
 		[TestInitialize]
 		public void Initialize() {
-			Client = new B2Client(Options);
-			Options = Client.Authorize().Result;
+			Client = new B2Client(Options.AccountId, Options.ApplicationKey);
+            BucketName = $"B2NETTestingBucket-{Path.GetRandomFileName().Replace(".", "").Substring(0, 6)}";
 
 			var buckets = Client.Buckets.GetList().Result;
 			B2Bucket existingBucket = null;
 			foreach (B2Bucket b2Bucket in buckets) {
-				if (b2Bucket.BucketName == "B2NETTestingBucket") {
+				if (b2Bucket.BucketName == BucketName) {
 					existingBucket = b2Bucket;
 				}
 			}
@@ -28,14 +36,14 @@ namespace B2Net.Tests {
 			if (existingBucket != null) {
 				TestBucket = existingBucket;
 			} else {
-				TestBucket = Client.Buckets.Create("B2NETTestingBucket", BucketTypes.allPrivate).Result;
+				TestBucket = Client.Buckets.Create(BucketName, BucketTypes.allPrivate).Result;
 			}
 		}
 
 		[TestMethod]
 		public void GetListTest() {
 			var fileName = "B2Test.txt";
-			var fileData = File.ReadAllBytes(Path.Combine(System.AppContext.BaseDirectory, "../../../", fileName));
+	        var fileData = File.ReadAllBytes(Path.Combine(FilePath, fileName));
 			var file = Client.Files.Upload(fileData, fileName, TestBucket.BucketId).Result;
 			// Clean up.
 			FilesToDelete.Add(file);
@@ -44,6 +52,57 @@ namespace B2Net.Tests {
 
 			Assert.AreEqual(1, list.Count, list.Count + " files found.");
 		}
+
+	    [TestMethod]
+	    public void GetListWithPrefixTest() {
+	        var fileName = "B2Test.txt";
+	        var fileNameWithFolder = "test/B2Test.txt";
+	        var fileData = File.ReadAllBytes(Path.Combine(FilePath, fileName));
+	        var file = Client.Files.Upload(fileData, fileName, TestBucket.BucketId).Result;
+	        var fileFolder = Client.Files.Upload(fileData, fileNameWithFolder, TestBucket.BucketId).Result;
+	        // Clean up.
+	        FilesToDelete.Add(file);
+	        FilesToDelete.Add(fileFolder);
+
+	        var list = Client.Files.GetListWithPrefixOrDemiliter(bucketId: TestBucket.BucketId, prefix: "test").Result.Files;
+
+	        Assert.AreEqual(1, list.Count, list.Count + " files found.");
+	    }
+
+	    [TestMethod]
+	    public void GetListWithPrefixAndDelimiterTest() {
+	        var fileName = "B2Test.txt";
+	        var fileNameWithFolder = "test/B2Test.txt";
+	        var fileData = File.ReadAllBytes(Path.Combine(FilePath, fileName));
+	        var file = Client.Files.Upload(fileData, fileName, TestBucket.BucketId).Result;
+	        var fileFolder = Client.Files.Upload(fileData, fileNameWithFolder, TestBucket.BucketId).Result;
+	        // Clean up.
+	        FilesToDelete.Add(file);
+	        FilesToDelete.Add(fileFolder);
+
+	        var list = Client.Files.GetListWithPrefixOrDemiliter(bucketId: TestBucket.BucketId, prefix: "test", delimiter: "/").Result.Files;
+
+	        Assert.AreEqual(1, list.Count, list.Count + " files found.");
+	        Assert.AreEqual("test/", list.First().FileName, "File names to not match.");
+	    }
+
+	    [TestMethod]
+	    public void GetListWithDelimiterTest() {
+	        var fileName = "B2Test.txt";
+	        var fileNameWithFolder = "test/B2Test.txt";
+	        var fileNameWithFolder2 = "test2/B2Test.txt";
+            var fileData = File.ReadAllBytes(Path.Combine(FilePath, fileName));
+	        var file = Client.Files.Upload(fileData, fileNameWithFolder2, TestBucket.BucketId).Result;
+	        var fileFolder = Client.Files.Upload(fileData, fileNameWithFolder, TestBucket.BucketId).Result;
+	        // Clean up.
+	        FilesToDelete.Add(file);
+	        FilesToDelete.Add(fileFolder);
+
+	        var list = Client.Files.GetListWithPrefixOrDemiliter(bucketId: TestBucket.BucketId, delimiter: "/").Result.Files;
+
+	        Assert.AreEqual(2, list.Count, list.Count + " files found.");
+	        Assert.IsTrue(list.All(f => f.Action == "folder"), "Not all list items were folders.");
+	    }
 
 		//[TestMethod]
 		//public void EmptyBucket() {
@@ -76,7 +135,7 @@ namespace B2Net.Tests {
 		[TestMethod]
 		public void FileUploadTest() {
 			var fileName = "B2Test.txt";
-			var fileData = File.ReadAllBytes(Path.Combine(System.AppContext.BaseDirectory, "../../../", fileName));
+			var fileData = File.ReadAllBytes(Path.Combine(FilePath, fileName));
 			string hash = Utilities.GetSHA1Hash(fileData);
 			var file = Client.Files.Upload(fileData, fileName, TestBucket.BucketId).Result;
 
@@ -85,6 +144,22 @@ namespace B2Net.Tests {
 
 			Assert.AreEqual(hash, file.ContentSHA1, "File hashes did not match.");
 		}
+
+        [TestMethod]
+        public void FileUploadUsingUploadUrlTest() {
+            var fileName = "B2Test.txt";
+            var fileData = File.ReadAllBytes(Path.Combine(FilePath, fileName));
+            string hash = Utilities.GetSHA1Hash(fileData);
+
+            var uploadUrl = Client.Files.GetUploadUrl(TestBucket.BucketId).Result;
+
+            var file = Client.Files.Upload(fileData, fileName, uploadUrl, true, TestBucket.BucketId).Result;
+
+            // Clean up.
+            FilesToDelete.Add(file);
+
+            Assert.AreEqual(hash, file.ContentSHA1, "File hashes did not match.");
+        }
 
 		//[TestMethod]
 		//public void FileUploadEncodingTest() {
@@ -103,7 +178,7 @@ namespace B2Net.Tests {
         public void FileUploadWithInfoTest()
         {
             var fileName = "B2Test.txt";
-            var fileData = File.ReadAllBytes(Path.Combine(System.AppContext.BaseDirectory, "../../../", fileName));
+            var fileData = File.ReadAllBytes(Path.Combine(FilePath, fileName));
             string hash = Utilities.GetSHA1Hash(fileData);
 
             var fileInfo = new Dictionary<string, string>();
@@ -122,7 +197,7 @@ namespace B2Net.Tests {
         public void FileDownloadNameTest()
         {
             var fileName = "B2Test.txt";
-            var fileData = File.ReadAllBytes(Path.Combine(System.AppContext.BaseDirectory, "../../../", fileName));
+            var fileData = File.ReadAllBytes(Path.Combine(FilePath, fileName));
             string hash = Utilities.GetSHA1Hash(fileData);
             var file = Client.Files.Upload(fileData, fileName, TestBucket.BucketId).Result;
             // Clean up.
@@ -141,7 +216,7 @@ namespace B2Net.Tests {
         public void FileDownloadWithInfoTest()
         {
             var fileName = "B2Test.txt";
-            var fileData = File.ReadAllBytes(Path.Combine(System.AppContext.BaseDirectory, "../../../", fileName));
+            var fileData = File.ReadAllBytes(Path.Combine(FilePath, fileName));
             string hash = Utilities.GetSHA1Hash(fileData);
 
             var fileInfo = new Dictionary<string, string>();
@@ -164,7 +239,7 @@ namespace B2Net.Tests {
         [TestMethod]
 		public void FileDownloadIdTest() {
 			var fileName = "B2Test.txt";
-			var fileData = File.ReadAllBytes(Path.Combine(System.AppContext.BaseDirectory, "../../../", fileName));
+			var fileData = File.ReadAllBytes(Path.Combine(FilePath, fileName));
 			string hash = Utilities.GetSHA1Hash(fileData);
 			var file = Client.Files.Upload(fileData, fileName, TestBucket.BucketId).Result;
 			// Clean up.
@@ -182,7 +257,7 @@ namespace B2Net.Tests {
 		[TestMethod]
 		public void FileDeleteTest() {
 			var fileName = "B2Test.txt";
-			var fileData = File.ReadAllBytes(Path.Combine(System.AppContext.BaseDirectory, "../../../", fileName));
+			var fileData = File.ReadAllBytes(Path.Combine(FilePath, fileName));
 			string hash = Utilities.GetSHA1Hash(fileData);
 			var file = Client.Files.Upload(fileData, fileName, TestBucket.BucketId).Result;
 
@@ -197,7 +272,7 @@ namespace B2Net.Tests {
 		[TestMethod]
 		public void ListVersionsTest() {
 			var fileName = "B2Test.txt";
-			var fileData = File.ReadAllBytes(Path.Combine(System.AppContext.BaseDirectory, "../../../", fileName));
+			var fileData = File.ReadAllBytes(Path.Combine(FilePath, fileName));
 			string hash = Utilities.GetSHA1Hash(fileData);
 			var file = Client.Files.Upload(fileData, fileName, TestBucket.BucketId).Result;
 			// Clean up.
@@ -213,7 +288,7 @@ namespace B2Net.Tests {
 		[TestMethod]
 		public void GetInfoTest() {
 			var fileName = "B2Test.txt";
-			var fileData = File.ReadAllBytes(Path.Combine(System.AppContext.BaseDirectory, "../../../", fileName));
+			var fileData = File.ReadAllBytes(Path.Combine(FilePath, fileName));
 			string hash = Utilities.GetSHA1Hash(fileData);
 
             var fileInfo = new Dictionary<string, string>();
@@ -230,6 +305,13 @@ namespace B2Net.Tests {
             Assert.AreEqual(file.UploadTimestamp, info.UploadTimestamp);
             Assert.AreEqual(1, info.FileInfo.Count);
         }
+
+		[TestMethod]
+		public void GetDownloadAuthorizationTest() {
+			var downloadAuth = Client.Files.GetDownloadAuthorization("Test", 120, TestBucket.BucketId).Result;
+			
+			Assert.AreEqual("Test", downloadAuth.FileNamePrefix, "File prefixes were not the same.");
+		}
 
 		[TestCleanup]
 		public void Cleanup() {

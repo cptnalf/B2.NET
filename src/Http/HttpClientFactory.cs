@@ -1,17 +1,23 @@
-﻿using System.Net.Http;
+﻿using System;
+using System.Net.Http;
 using System.Net.Http.Headers;
 
 namespace B2Net.Http {
 	public static class HttpClientFactory {
-		public static HttpClient CreateHttpClient() {
-			var handler = new HttpClientHandler() {AllowAutoRedirect = true};
+	    private static HttpClient _client;
 
-			var httpClient = new HttpClient(handler);
+        public static HttpClient CreateHttpClient(int timeout) {
+            if (_client == null) {
+                var handler = new HttpClientHandler() { AllowAutoRedirect = true };
 
-			httpClient.DefaultRequestHeaders.Accept.Clear();
-			httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                _client = new HttpClient(handler);
 
-			return httpClient;
-		}
+                _client.Timeout = TimeSpan.FromSeconds(timeout);
+
+                _client.DefaultRequestHeaders.Accept.Clear();
+                _client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            }
+            return _client;
+        }
 	}
 }
