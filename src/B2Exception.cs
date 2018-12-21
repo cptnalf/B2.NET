@@ -6,6 +6,7 @@ namespace B2Net
 	{
 		public string status { get; set; }
 		public string code { get; set; }
-		public B2Exception(string cd, string sts, string msg) : base(msg) { status=sts; code=cd; }
+		public bool reply {get;set; }
+		public B2Exception(string cd, string sts, string msg, bool reply) : base(msg) { status=sts; code=cd; reply=reply; }
 	}
 }
