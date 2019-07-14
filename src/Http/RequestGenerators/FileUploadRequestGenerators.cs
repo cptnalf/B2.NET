@@ -12,6 +12,15 @@ namespace B2Net.Http {
 			public const string GetUploadUrl = "b2_get_upload_url";
 		}
 
+		/// <summary>
+		/// Upload a file to B2. This method will calculate the SHA1 checksum before sending any data.
+		/// </summary>
+		/// <param name="options"></param>
+		/// <param name="uploadUrl"></param>
+		/// <param name="fileData"></param>
+		/// <param name="fileName"></param>
+		/// <param name="fileInfo"></param>
+		/// <returns></returns>
 		public static HttpRequestMessage Upload(B2Options options, string uploadUrl, byte[] fileData, string fileName, Dictionary<string, string> fileInfo) {
 			var uri = new Uri(uploadUrl);
 			var request = new HttpRequestMessage() {
@@ -28,10 +37,8 @@ namespace B2Net.Http {
 			request.Headers.Add("X-Bz-File-Name", fileName.b2UrlEncode());
 			request.Headers.Add("X-Bz-Content-Sha1", hash);
             // File Info headers
-            if(fileInfo != null && fileInfo.Count > 0)
-            {
-                foreach (var info in fileInfo.Take(10))
-                {
+			if (fileInfo != null && fileInfo.Count > 0) {
+				foreach (var info in fileInfo.Take(10)) {
                     request.Headers.Add($"X-Bz-Info-{info.Key}", info.Value);
                 }
             }

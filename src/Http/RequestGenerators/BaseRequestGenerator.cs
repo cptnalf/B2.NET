@@ -1,7 +1,7 @@
-﻿using System;
+﻿using B2Net.Models;
+using System;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using B2Net.Models;
 
 namespace B2Net.Http.RequestGenerators {
 	public static class BaseRequestGenerator {
@@ -12,7 +12,7 @@ namespace B2Net.Http.RequestGenerators {
 	            RequestUri = uri,
 	            Content = new StringContent(body)
 	        };
-            
+
             request.Headers.TryAddWithoutValidation("Authorization", options.AuthorizationToken);
 
 	        return request;

@@ -1,10 +1,8 @@
-﻿using System;
+﻿using B2Net.Models;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using B2Net.Http;
-using B2Net.Models;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace B2Net.Tests {
 	[TestClass]
@@ -35,7 +33,8 @@ namespace B2Net.Tests {
 
 			if (existingBucket != null) {
 				TestBucket = existingBucket;
-			} else {
+			}
+			else {
 				TestBucket = Client.Buckets.Create(BucketName, BucketTypes.allPrivate).Result;
 			}
 		}
@@ -175,8 +174,7 @@ namespace B2Net.Tests {
 		//}
 
 		[TestMethod]
-        public void FileUploadWithInfoTest()
-        {
+		public void FileUploadWithInfoTest() {
             var fileName = "B2Test.txt";
             var fileData = File.ReadAllBytes(Path.Combine(FilePath, fileName));
             string hash = Utilities.GetSHA1Hash(fileData);
@@ -194,8 +192,7 @@ namespace B2Net.Tests {
         }
 
         [TestMethod]
-        public void FileDownloadNameTest()
-        {
+		public void FileDownloadNameTest() {
             var fileName = "B2Test.txt";
             var fileData = File.ReadAllBytes(Path.Combine(FilePath, fileName));
             string hash = Utilities.GetSHA1Hash(fileData);
@@ -213,8 +210,7 @@ namespace B2Net.Tests {
         }
 
         [TestMethod]
-        public void FileDownloadWithInfoTest()
-        {
+		public void FileDownloadWithInfoTest() {
             var fileName = "B2Test.txt";
             var fileData = File.ReadAllBytes(Path.Combine(FilePath, fileName));
             string hash = Utilities.GetSHA1Hash(fileData);
@@ -309,7 +305,7 @@ namespace B2Net.Tests {
 		[TestMethod]
 		public void GetDownloadAuthorizationTest() {
 			var downloadAuth = Client.Files.GetDownloadAuthorization("Test", 120, TestBucket.BucketId).Result;
-			
+
 			Assert.AreEqual("Test", downloadAuth.FileNamePrefix, "File prefixes were not the same.");
 		}
 

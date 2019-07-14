@@ -1,11 +1,11 @@
-﻿using System;
-using System.Net.Http;
-using B2Net.Http.RequestGenerators;
+﻿using B2Net.Http.RequestGenerators;
 using B2Net.Models;
 using Newtonsoft.Json;
-using System.Collections.Generic;
-using System.Text.RegularExpressions;
 using Newtonsoft.Json.Serialization;
+using System;
+using System.Collections.Generic;
+using System.Net.Http;
+using System.Text.RegularExpressions;
 
 namespace B2Net.Http {
 	public static class BucketRequestGenerators {
@@ -52,8 +52,7 @@ namespace B2Net.Http {
         /// <param name="bucketName"></param>
         /// <param name="bucketType"></param>
         /// <returns></returns>
-        public static HttpRequestMessage CreateBucket(B2Options options, string bucketName, B2BucketOptions bucketOptions)
-        {
+		public static HttpRequestMessage CreateBucket(B2Options options, string bucketName, B2BucketOptions bucketOptions) {
             // Check lifecycle rules
             var hasLifecycleRules = bucketOptions.LifecycleRules != null && bucketOptions.LifecycleRules.Count > 0;
             if (hasLifecycleRules) {
@@ -86,7 +85,7 @@ namespace B2Net.Http {
                     { "Cache-Control", "max-age=" + bucketOptions.CacheControl }
                 };
             }
-            if(hasLifecycleRules) {
+			if (hasLifecycleRules) {
                 body.lifecycleRules = bucketOptions.LifecycleRules;
             }
 
@@ -109,8 +108,7 @@ namespace B2Net.Http {
         /// </summary>
         /// <param name="options"></param>
         /// <returns></returns>
-        public static HttpRequestMessage UpdateBucket(B2Options options, string bucketId, B2BucketOptions bucketOptions)
-        {
+		public static HttpRequestMessage UpdateBucket(B2Options options, string bucketId, B2BucketOptions bucketOptions) {
             // Check lifecycle rules
             var hasLifecycleRules = bucketOptions.LifecycleRules != null && bucketOptions.LifecycleRules.Count > 0;
             if (hasLifecycleRules) {
@@ -124,8 +122,7 @@ namespace B2Net.Http {
                 }
             }
 
-            var body = new B2BucketUpdateModel()
-            {
+			var body = new B2BucketUpdateModel() {
                 accountId = options.AccountId,
                 bucketId = bucketId,
                 bucketType = bucketOptions.BucketType.ToString()
@@ -145,15 +142,14 @@ namespace B2Net.Http {
             return BaseRequestGenerator.PostRequest(Endpoints.Update, json, options);
         }
 
-        private static string JsonSerialize(object data){
+		private static string JsonSerialize(object data) {
             return JsonConvert.SerializeObject(data, Formatting.Indented, new JsonSerializerSettings() {
                 ContractResolver = new CamelCasePropertyNamesContractResolver()
             });
         }
     }
 
-    internal class B2BucketCreateModel
-    {
+	internal class B2BucketCreateModel {
         public string accountId { get; set; }
         public string bucketName { get; set; }
         public string bucketType { get; set; }
@@ -161,8 +157,7 @@ namespace B2Net.Http {
         public List<B2BucketLifecycleRule> lifecycleRules { get; set; }
     }
 
-    internal class B2BucketUpdateModel
-    {
+	internal class B2BucketUpdateModel {
         public string accountId { get; set; }
         public string bucketId { get; set; }
         public string bucketType { get; set; }
